@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {HttpClient, HttpEventType, HttpHeaders, HttpParams} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse, HttpEventType, HttpHeaders, HttpParams} from '@angular/common/http';
 import {catchError, map, tap} from 'rxjs/operators';
 
 import {Post} from './post.model';
@@ -10,26 +10,44 @@ import {Observable, throwError} from 'rxjs';
 })
 export class PostsService {
 
-  url = 'https://angular-course-project-78270.firebaseio.com/';
+  url = 'https://angular-course-project-78270.firebaseio.com';
 
   constructor(private http: HttpClient) { }
 
   public add(post: Post): Observable<{ name: string }> {
     return this.http
       .post<{ name: string }>(
-        this.url + 'posts.json',
+        this.url + '/posts.json',
         post)
         .pipe(
-          catchError(error => {
-            return throwError(this.getError(error));
-          })
+          catchError(this.handleError)
         );
   }
 
+  public update(id: string, post: Post): Observable<{ name: string }> {
+    const url = `${this.url}/posts/${id}.json`;
+    return this.http.put<{ name: string }>(
+      url,
+      post)
+      .pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  public get(id: string): Observable<Post> {
+    const url = `${this.url}/posts/${id}.json`;
+    return this.http.get<Post>(
+      url
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   public getAll(): Observable<Post[]> {
+    // @ts-ignore
     return this.http
       .get<{ [key: string]: Post }>(
-        this.url + 'posts.json',
+        this.url + '/posts.json',
         {
           headers: new HttpHeaders({'x-app-id': '1324'}),
           params: new HttpParams()
@@ -46,15 +64,22 @@ export class PostsService {
           }
           return posts;
         }),
-        catchError(error => {
-          return throwError(this.getError(error));
-        })
+        catchError(this.handleError)
       );
+  }
+
+  public delete(id: string): Observable<any> {
+    const url = `${this.url}/posts/${id}.json`;
+    return this.http.delete(
+      url
+    ).pipe(
+      catchError(this.handleError)
+    );
   }
 
   public deleteAll(): Observable<any> {
     return this.http.delete(
-      this.url + 'posts.json', {
+      this.url + '/posts.json', {
         observe: 'events'
       }
     ).pipe(
@@ -67,13 +92,23 @@ export class PostsService {
           console.log('Response: ', event);
         }
       }),
-      catchError(error => {
-        return throwError(this.getError(error));
-      })
+      catchError(this.handleError)
     );
   }
 
-  private getError(error) {
-    return { title: error.error.error, message: error.message };
+  private handleError(error: HttpErrorResponse) {
+    if (error.error instanceof ErrorEvent || error.error instanceof ProgressEvent) {
+      return throwError({
+        title: 'Disabled internet connection',
+        message: error.message,
+        code: '404'
+      });
+    } else {
+      return throwError({
+        title: error.error.error,
+        message: error.message,
+        code: error.status
+      });
+    }
   }
 }

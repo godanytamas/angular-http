@@ -19,12 +19,35 @@ export class AppComponent implements OnInit {
   loadedPosts = [];
   isFetching = false;
   error = null;
+  edit = false;
+  editedPostId = null;
 
   constructor(private posts: PostsService,
               private fb: FormBuilder) {}
 
   ngOnInit() {
     this.fetchPosts();
+  }
+
+  public onSubmit() {
+    if (this.postForm.valid) {
+      const post = (this.postForm.value as Post);
+      if (this.edit) {
+        this.posts.update(this.editedPostId, post)
+          .subscribe((res) => {
+              this.fetchPosts();
+              this.resetForm();
+            }
+          );
+      } else {
+        this.posts.add(post)
+          .subscribe((res) => {
+              this.fetchPosts();
+              this.resetForm();
+            }
+          );
+      }
+    }
   }
 
   public onCreatePost() {
@@ -34,7 +57,7 @@ export class AppComponent implements OnInit {
       this.posts.add(post)
         .subscribe(response => {
           this.fetchPosts();
-          this.postForm.reset();
+          this.resetForm();
         });
     }
   }
@@ -42,6 +65,24 @@ export class AppComponent implements OnInit {
   public onFetchPosts() {
     // Send Http request
     this.fetchPosts();
+  }
+
+  public onFetchPost(id: string) {
+    this.posts.get(id).subscribe(
+      (post: Post) => {
+        this.postForm.patchValue(post);
+        this.editedPostId = id;
+        this.edit = true;
+      }
+    );
+  }
+
+  public onDeletePost(id: string) {
+    this.posts.delete(id).subscribe(
+      () => {
+        this.fetchPosts();
+      }
+    );
   }
 
   public onClearPosts() {
@@ -65,5 +106,11 @@ export class AppComponent implements OnInit {
           this.error = error;
           console.log(error);
         });
+  }
+
+  private resetForm() {
+    this.postForm.reset();
+    this.editedPostId = null;
+    this.edit = false;
   }
 }
