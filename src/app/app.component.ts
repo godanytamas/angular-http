@@ -50,21 +50,13 @@ export class AppComponent implements OnInit {
     }
   }
 
-  public onCreatePost() {
-    if (this.postForm.valid) {
-      const post = (this.postForm.value as Post);
-      // Send Http request
-      this.posts.add(post)
-        .subscribe(response => {
-          this.fetchPosts();
-          this.resetForm();
-        });
-    }
-  }
-
   public onFetchPosts() {
     // Send Http request
     this.fetchPosts();
+  }
+
+  public onSearch(query: string) {
+    this.fetchPosts(query);
   }
 
   public onFetchPost(id: string) {
@@ -93,10 +85,10 @@ export class AppComponent implements OnInit {
       });
   }
 
-  private fetchPosts() {
+  private fetchPosts(query: string = null) {
     this.isFetching = true;
     this.error = null;
-    this.posts.getAll()
+    this.posts.getAll(query)
       .subscribe(
         posts => {
           this.isFetching = false;

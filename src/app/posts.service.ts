@@ -43,17 +43,23 @@ export class PostsService {
     );
   }
 
-  public getAll(): Observable<Post[]> {
-    // @ts-ignore
+  public getAll(query?: string): Observable<Post[]> {
+    console.log(query);
+    const url = `${this.url}/posts.json`;
+    let options = {};
+    if (query) {
+      options = {
+        params: new HttpParams()
+          .append('orderBy', `"title"`)
+          .append('startAt', `"${query.toUpperCase()}"`)
+          .append('endAt', `"${query.toLowerCase()}\\uf8ff"`)
+      };
+    }
     return this.http
       .get<{ [key: string]: Post }>(
-        this.url + '/posts.json',
-        {
-          headers: new HttpHeaders({'x-app-id': '1324'}),
-          params: new HttpParams()
-            .append('s', 'something')
-            .append('page', '1')
-        })
+        url,
+        options
+      )
       .pipe(
         map(response => {
           const posts: Post[] = [];
